@@ -4,6 +4,7 @@ import { Dices, LogOut, User } from "lucide-react";
 import { Link, useNavigate } from "react-router";
 import { useAuth } from "../contexts/AuthContext";
 import { useState } from "react";
+import { login2 } from "../service/usuario";
 
 export function Header() {
   const navigate = useNavigate();
@@ -11,12 +12,23 @@ export function Header() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
-  const handleQuickLogin = (e?: React.FormEvent) => {
+
+  const handleQuickLogin = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    if (email && password) {
-      login(email, password);
-      navigate('/dashboard');
+
+    try {
+      const dados = await login2(email, password);
+      console.log(dados);
+      if (dados && dados.length > 0) {
+        login(email, password, dados[0]);
+        navigate("/dashboard");
+      } 
+    } catch {
+      console.log("Erro ao conectar com o servidor. Tente novamente.");
     }
+
+
+
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {

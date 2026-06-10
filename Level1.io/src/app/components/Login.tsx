@@ -5,29 +5,39 @@ import { Dices } from "lucide-react";
 import { Link, useNavigate } from "react-router";
 import { useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
+import { login2 } from "../service/usuario";
 
 export function Login() {
   const navigate = useNavigate();
   const { login } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [erro, setErro] = useState(""); 
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    login(email, password);
-    navigate('/dashboard');
+    setErro("");
+    try {
+      const dados = await login2(email, password);
+      if (dados && dados.length > 0) {
+        login(email, password, dados[0]);
+        navigate("/dashboard");
+      } else {
+        setErro("Email ou senha incorretos.");
+      }
+    } catch {
+      setErro("Erro ao conectar com o servidor. Tente novamente.");
+    }
   };
 
   return (
     <div className="min-h-[calc(100vh-200px)] flex items-center justify-center px-4">
       <div className="w-full max-w-md">
-        {/* Logo */}
         <div className="flex items-center justify-center gap-2 mb-12">
           <Dices className="w-12 h-12 text-primary" />
           <span className="text-4xl font-bold text-primary">Level1.io</span>
         </div>
 
-        {/* Login Form */}
         <div className="bg-card border border-border rounded-lg p-8 space-y-6">
           <div className="space-y-2 text-center">
             <h1 className="text-3xl text-foreground">Entrar</h1>
@@ -62,6 +72,10 @@ export function Login() {
                 required
               />
             </div>
+
+            {erro && (
+              <p className="text-sm text-destructive text-center">{erro}</p>
+            )}
 
             <Button type="submit" className="w-full bg-primary hover:bg-accent">
               Entrar

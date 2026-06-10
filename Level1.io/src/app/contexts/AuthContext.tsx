@@ -20,15 +20,13 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
 
-  const login = (email: string, password: string) => {
-    // Mock login - in production this would call an API
-    setUser({
-      name: 'Usuário Teste',
-      email: email,
-      characterName: 'Aragorn',
-      role: 'player', // Can be 'player' or 'dm'
-    });
-  };
+ const login = (email: string, password: string, userData?: { nomeusuario: string; apelido: string }) => {
+  setUser({
+    name: userData?.nomeusuario ?? email,
+    email: email,
+    characterName: userData?.apelido ?? undefined,
+  });
+};
 
   const signup = (name: string, email: string, password: string, characterName?: string) => {
     // Mock signup - in production this would call an API
