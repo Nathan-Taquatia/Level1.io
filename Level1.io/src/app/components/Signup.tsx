@@ -5,6 +5,7 @@ import { Dices } from "lucide-react";
 import { Link, useNavigate } from "react-router";
 import { useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
+import { cadastrar } from "../service/usuario";
 
 export function Signup() {
   const navigate = useNavigate();
@@ -16,11 +17,10 @@ export function Signup() {
   const [characterName, setCharacterName] = useState("");
   const [error, setError] = useState("");
 
-  const handleSignup = (e: React.FormEvent) => {
+  const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
 
-    // Validation
     if (password !== confirmPassword) {
       setError("As senhas não correspondem");
       return;
@@ -31,9 +31,13 @@ export function Signup() {
       return;
     }
 
-    // Signup user
-    signup(name, email, password, characterName || undefined);
-    navigate('/dashboard');
+    try {
+      const dados = await cadastrar(name, email, password, characterName || undefined);
+      signup(name, email, password, characterName || undefined, dados.id_usuario);
+      navigate('/dashboard');
+    } catch {
+      setError("Erro ao criar conta. Tente novamente.");
+    }
   };
 
   return (

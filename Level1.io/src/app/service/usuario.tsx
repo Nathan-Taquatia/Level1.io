@@ -1,7 +1,21 @@
- export async function login2(email: string, senha: string) {
-    const resposta = await fetch(
-      `https://level1-io-service.onrender.com/login?emailusuario=${encodeURIComponent(email)}&mdsenha=${encodeURIComponent(senha)}`
-    );
-    if (!resposta.ok) throw new Error(`Erro na requisição: ${resposta.status}`);
-    return await resposta.json();
-  }
+const BASE_URL = 'https://level1-io-service.onrender.com';
+
+export async function login2(email: string, senha: string) {
+  const resposta = await fetch(`${BASE_URL}/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ emailusuario: email, mdsenha: senha }),
+  });
+  if (!resposta.ok) throw new Error(`Erro na requisição: ${resposta.status}`);
+  return await resposta.json();
+}
+
+export async function cadastrar(nomeusuario: string, email: string, senha: string, apelido?: string) {
+  const resposta = await fetch(`${BASE_URL}/cadastro`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ nomeusuario, emailusuario: email, mdsenha: senha, apelido: apelido ?? null }),
+  });
+  if (!resposta.ok) throw new Error(`Erro no cadastro: ${resposta.status}`);
+  return await resposta.json();
+}

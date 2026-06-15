@@ -3,32 +3,31 @@ import { Input } from "./ui/input";
 import { Dices, LogOut, User } from "lucide-react";
 import { Link, useNavigate } from "react-router";
 import { useAuth } from "../contexts/AuthContext";
-import { useState } from "react";
 import { login2 } from "../service/usuario";
+import { useState } from "react";
 
 export function Header() {
   const navigate = useNavigate();
   const { isAuthenticated, user, login, logout } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-
+  const [erro, setErro] = useState("");
 
   const handleQuickLogin = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-
+    if (!email || !password) return;
+    setErro("");
     try {
       const dados = await login2(email, password);
-      console.log(dados);
       if (dados && dados.length > 0) {
         login(email, password, dados[0]);
-        navigate("/dashboard");
-      } 
+        navigate('/dashboard');
+      } else {
+        setErro("Email ou senha incorretos.");
+      }
     } catch {
-      console.log("Erro ao conectar com o servidor. Tente novamente.");
+      setErro("Erro ao conectar com o servidor.");
     }
-
-
-
   };
 
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -66,7 +65,9 @@ export function Header() {
             </Button>
           </div>
         ) : (
-          <div className="flex items-center gap-3 mr-8">
+          <div className="flex flex-col items-end gap-1 mr-8">
+            {erro && <p className="text-xs text-destructive">{erro}</p>}
+            <div className="flex items-center gap-3">
             <Input
               type="email"
               placeholder="Email"
@@ -96,6 +97,7 @@ export function Header() {
             >
               Cadastrar-se
             </Button>
+            </div>
           </div>
         )}
       </div>

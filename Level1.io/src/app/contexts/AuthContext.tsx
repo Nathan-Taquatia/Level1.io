@@ -3,14 +3,15 @@ import { createContext, useContext, useState, ReactNode } from 'react';
 interface User {
   name: string;
   email: string;
+  id_usuario?: number;
   characterName?: string;
-  role?: 'player' | 'dm'; // For future use
+  role?: 'player' | 'dm';
 }
 
 interface AuthContextType {
   user: User | null;
-  login: (email: string, password: string) => void;
-  signup: (name: string, email: string, password: string, characterName?: string) => void;
+  login: (email: string, password: string, userData?: { nomeusuario: string; apelido: string; id_usuario: number }) => void;
+  signup: (name: string, email: string, password: string, characterName?: string, id_usuario?: number) => void;
   logout: () => void;
   isAuthenticated: boolean;
 }
@@ -20,21 +21,21 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
 
- const login = (email: string, password: string, userData?: { nomeusuario: string; apelido: string }) => {
-  setUser({
-    name: userData?.nomeusuario ?? email,
-    email: email,
-    characterName: userData?.apelido ?? undefined,
-  });
-};
-
-  const signup = (name: string, email: string, password: string, characterName?: string) => {
-    // Mock signup - in production this would call an API
+  const login = (email: string, password: string, userData?: { nomeusuario: string; apelido: string; id_usuario: number }) => {
     setUser({
-      name: name,
+      name: userData?.nomeusuario ?? email,
       email: email,
-      characterName: characterName,
-      role: 'player', // Default to player, can be changed later
+      id_usuario: userData?.id_usuario,
+      characterName: userData?.apelido ?? undefined,
+    });
+  };
+
+  const signup = (name: string, email: string, password: string, characterName?: string, id_usuario?: number) => {
+    setUser({
+      name,
+      email,
+      id_usuario,
+      characterName,
     });
   };
 
