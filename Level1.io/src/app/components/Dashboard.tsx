@@ -78,6 +78,25 @@ export function Dashboard() {
           </Card>
         </Link>
 
+        <Link to="/campanhas">
+          <Card className="bg-card border-border hover:border-primary transition-colors cursor-pointer">
+            <CardHeader>
+              <div className="w-12 h-12 bg-primary/20 rounded-lg flex items-center justify-center mb-4">
+                <Users className="w-6 h-6 text-primary" />
+              </div>
+              <CardTitle className="text-foreground">Explorar Campanhas</CardTitle>
+              <CardDescription>
+                Encontre campanhas da comunidade para participar
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button variant="outline" className="w-full border-primary text-primary hover:bg-primary hover:text-primary-foreground">
+                Ver Todas
+              </Button>
+            </CardContent>
+          </Card>
+        </Link>
+
         <Link to="/meus-grupos">
           <Card className="bg-card border-border hover:border-primary transition-colors cursor-pointer">
             <CardHeader>
