@@ -240,7 +240,7 @@ export function MyCampaigns() {
                   </div>
                   <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {grupo.campanhas.map((campanha) => (
-                      <Card key={campanha.idcampanha} className="bg-card border-border hover:border-primary transition-colors">
+                      <Card key={`grupo-${grupo.idgrupos}-camp-${campanha.idcampanha}`} className="bg-card border-border hover:border-primary transition-colors">
                         <CardHeader>
                           <div className="w-12 h-12 bg-primary/20 rounded-lg flex items-center justify-center mb-4">
                             <BookOpen className="w-6 h-6 text-primary" />
@@ -284,7 +284,7 @@ export function MyCampaigns() {
             </div>
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
               {campanhasJogador.map((campanha) => (
-                <Card key={campanha.idcampanha} className="bg-card border-border hover:border-primary transition-colors">
+                <Card key={`jogador-${campanha.idcampanha}`} className="bg-card border-border hover:border-primary transition-colors">
                   <CardHeader>
                     <div className="w-12 h-12 bg-primary/20 rounded-lg flex items-center justify-center mb-4">
                       <BookOpen className="w-6 h-6 text-primary" />
