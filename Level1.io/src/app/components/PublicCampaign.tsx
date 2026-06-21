@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { criarSolicitacao } from "../service/solicitacoes";
+import { getCampanhasUsuario } from "../service/campanhas";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
 import { BookOpen, Calendar, Users, Sword, LogIn } from "lucide-react";
@@ -26,6 +27,7 @@ export function PublicCampaigns() {
   const [erro, setErro] = useState("");
   const [enviando, setEnviando] = useState<number | null>(null);
   const [enviados, setEnviados] = useState<number[]>([]);
+  const [participando, setParticipando] = useState<number[]>([]);
 
   useEffect(() => {
     fetch('https://level1-io-service.onrender.com/campanha')
@@ -37,6 +39,13 @@ export function PublicCampaigns() {
       .catch(() => setErro("Erro ao carregar campanhas."))
       .finally(() => setCarregando(false));
   }, []);
+
+  useEffect(() => {
+    if (!user?.id_usuario) return;
+    getCampanhasUsuario(user.id_usuario)
+      .then((dados) => setParticipando(dados.map((c: { idcampanha: number }) => c.idcampanha)))
+      .catch(() => {});
+  }, [user?.id_usuario]);
 
   const handlePedirEntrar = async (idcampanha: number) => {
     if (!user?.id_usuario) return;
@@ -145,6 +154,10 @@ export function PublicCampaigns() {
                   ) : isProprioMestre(campanha) ? (
                     <Button disabled variant="outline" className="border-border text-muted-foreground">
                       Você é o mestre desta campanha
+                    </Button>
+                  ) : participando.includes(campanha.idcampanha) ? (
+                    <Button disabled variant="outline" className="border-border text-muted-foreground">
+                      Você já faz parte desta campanha
                     </Button>
                   ) : enviados.includes(campanha.idcampanha) ? (
                     <Button disabled className="bg-primary/50">

@@ -6,6 +6,12 @@ export async function getCampanhasGrupo(idgrupo: number) {
   return await resposta.json();
 }
 
+export async function getCampanhasUsuario(idusuario: number) {
+  const resposta = await fetch(`${BASE_URL}/minhas-campanhas/${idusuario}`);
+  if (!resposta.ok) throw new Error(`Erro ao buscar campanhas do usuário: ${resposta.status}`);
+  return await resposta.json();
+}
+
 export async function criarCampanha(dados: {
   campanhanome: string;
   datajogo?: string;

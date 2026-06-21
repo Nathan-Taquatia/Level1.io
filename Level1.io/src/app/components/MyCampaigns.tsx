@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { getGruposUsuario } from "../service/grupos";
-import { getCampanhasGrupo, criarCampanha } from "../service/campanhas";
+import { getCampanhasGrupo, getCampanhasUsuario, criarCampanha } from "../service/campanhas";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
@@ -35,6 +35,7 @@ interface GrupoComCampanhas extends GrupoAPI {
 export function MyCampaigns() {
   const { user } = useAuth();
   const [grupos, setGrupos] = useState<GrupoComCampanhas[]>([]);
+  const [campanhasJogador, setCampanhasJogador] = useState<CampanhaAPI[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState("");
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -50,7 +51,10 @@ export function MyCampaigns() {
   async function carregar() {
     if (!user?.id_usuario) return;
     try {
-      const gruposData = await getGruposUsuario(user.id_usuario);
+      const [gruposData, campJogador] = await Promise.all([
+        getGruposUsuario(user.id_usuario),
+        getCampanhasUsuario(user.id_usuario),
+      ]);
       const gruposComCampanhas = await Promise.all(
         gruposData.map(async (grupo: GrupoAPI) => {
           const campanhas = await getCampanhasGrupo(grupo.idgrupos);
@@ -58,6 +62,7 @@ export function MyCampaigns() {
         })
       );
       setGrupos(gruposComCampanhas);
+      setCampanhasJogador(campJogador);
     } catch {
       setErro("Erro ao carregar campanhas.");
     } finally {
@@ -268,6 +273,47 @@ export function MyCampaigns() {
                 </div>
               )
             ))}
+          </div>
+        )}
+        {/* Campanhas como jogador aceito */}
+        {campanhasJogador.length > 0 && (
+          <div className="mt-12">
+            <div className="flex items-center gap-3 mb-4">
+              <BookOpen className="w-6 h-6 text-primary" />
+              <h2 className="text-2xl text-foreground">Campanhas que Participo</h2>
+            </div>
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {campanhasJogador.map((campanha) => (
+                <Card key={campanha.idcampanha} className="bg-card border-border hover:border-primary transition-colors">
+                  <CardHeader>
+                    <div className="w-12 h-12 bg-primary/20 rounded-lg flex items-center justify-center mb-4">
+                      <BookOpen className="w-6 h-6 text-primary" />
+                    </div>
+                    <CardTitle className="text-foreground">{campanha.campanhanome}</CardTitle>
+                    <CardDescription>
+                      <span className="inline-block bg-primary/20 text-primary px-2 py-1 rounded text-xs mr-2">
+                        {campanha.tipo === 'original' ? 'Original' : 'Oficial'}
+                      </span>
+                      {campanha.nomesistema && (
+                        <span className="text-muted-foreground">{campanha.nomesistema}</span>
+                      )}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-muted-foreground text-sm">
+                      {campanha.descricao ?? "Sem descrição."}
+                    </p>
+                    {campanha.datajogo && (
+                      <div className="mt-4 pt-4 border-t border-border">
+                        <p className="text-xs text-muted-foreground">
+                          Data: {new Date(campanha.datajogo).toLocaleDateString('pt-BR')}
+                        </p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           </div>
         )}
       </div>
