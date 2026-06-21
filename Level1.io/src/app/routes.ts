@@ -9,7 +9,7 @@ import { MyGroups } from "./components/MyGroups";
 import { MyCampaigns } from "./components/MyCampaigns";
 import { CharacterSheets } from "./components/CharacterSheets";
 import { Campaigns } from "./components/Campaigns";
-import { PublicCampaigns } from "./components/PublicCampaigns";
+import { PublicCampaigns } from "./components/PublicCampaign";
 import { Tips } from "./components/Tips";
 
 export const router = createBrowserRouter([
