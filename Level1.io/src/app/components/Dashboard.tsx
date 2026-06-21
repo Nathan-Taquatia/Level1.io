@@ -1,12 +1,23 @@
 import { useAuth } from "../contexts/AuthContext";
 import { useCampaigns } from "../contexts/CampaignContext";
 import { useCharacterSheets } from "../contexts/CharacterSheetContext";
+import { getSolicitacoesPendentes, responderSolicitacao } from "../service/solicitacoes";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
-import { BookOpen, FileText, Users, Lightbulb, Plus } from "lucide-react";
+import { BookOpen, FileText, Users, Lightbulb, Plus, Bell, Check, X } from "lucide-react";
 import { Agenda } from "./Agenda";
 import { Link } from "react-router";
 import { UserNavigation } from "./UserNavigation";
+import { useState, useEffect } from "react";
+
+interface Solicitacao {
+  idsolicitacao: number;
+  nomeusuario: string;
+  apelido: string | null;
+  campanhanome: string;
+  idcampanha: number;
+  criado_em: string;
+}
 
 export function Dashboard() {
   const { user } = useAuth();
@@ -15,6 +26,28 @@ export function Dashboard() {
   const userGroups = user ? getUserGroups(user.email) : [];
   const userSheets = user ? getUserSheets(user.email) : [];
   const totalCampaigns = userGroups.reduce((acc, group) => acc + group.campaigns.length, 0);
+
+  const [solicitacoes, setSolicitacoes] = useState<Solicitacao[]>([]);
+  const [respondendo, setRespondendo] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (!user?.id_usuario) return;
+    getSolicitacoesPendentes(user.id_usuario)
+      .then(setSolicitacoes)
+      .catch(() => {});
+  }, [user?.id_usuario]);
+
+  const handleResponder = async (idsolicitacao: number, status: 'aceito' | 'negado') => {
+    setRespondendo(idsolicitacao);
+    try {
+      await responderSolicitacao(idsolicitacao, status);
+      setSolicitacoes(solicitacoes.filter(s => s.idsolicitacao !== idsolicitacao));
+    } catch {
+      // silencioso
+    } finally {
+      setRespondendo(null);
+    }
+  };
 
   return (
     <>
@@ -31,6 +64,57 @@ export function Dashboard() {
           </p>
         )}
       </div>
+
+      {/* Notificações para mestres */}
+      {solicitacoes.length > 0 && (
+        <div className="mb-8">
+          <div className="flex items-center gap-2 mb-4">
+            <Bell className="w-5 h-5 text-primary" />
+            <h2 className="text-xl text-foreground">Solicitações Pendentes</h2>
+            <span className="bg-primary text-primary-foreground text-xs px-2 py-0.5 rounded-full">
+              {solicitacoes.length}
+            </span>
+          </div>
+          <div className="space-y-3">
+            {solicitacoes.map((sol) => (
+              <Card key={sol.idsolicitacao} className="bg-card border-border border-l-4 border-l-primary">
+                <CardContent className="py-4 flex items-center justify-between gap-4">
+                  <div>
+                    <p className="text-foreground font-medium">
+                      {sol.nomeusuario}{sol.apelido ? ` (${sol.apelido})` : ''} quer entrar em{' '}
+                      <span className="text-primary">{sol.campanhanome}</span>
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {new Date(sol.criado_em).toLocaleDateString('pt-BR')}
+                    </p>
+                  </div>
+                  <div className="flex gap-2 shrink-0">
+                    <Button
+                      size="sm"
+                      className="bg-primary hover:bg-accent"
+                      disabled={respondendo === sol.idsolicitacao}
+                      onClick={() => handleResponder(sol.idsolicitacao, 'aceito')}
+                    >
+                      <Check className="w-4 h-4 mr-1" />
+                      Aceitar
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="border-destructive text-destructive hover:bg-destructive hover:text-white"
+                      disabled={respondendo === sol.idsolicitacao}
+                      onClick={() => handleResponder(sol.idsolicitacao, 'negado')}
+                    >
+                      <X className="w-4 h-4 mr-1" />
+                      Negar
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Agenda Section */}
       <div className="mb-12">

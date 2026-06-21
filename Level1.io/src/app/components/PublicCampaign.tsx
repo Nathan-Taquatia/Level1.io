@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react";
+import { useAuth } from "../contexts/AuthContext";
+import { criarSolicitacao } from "../service/solicitacoes";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
-import { BookOpen, Calendar, Users, Sword } from "lucide-react";
+import { BookOpen, Calendar, Users, Sword, LogIn } from "lucide-react";
 import { Link } from "react-router";
 import { UserNavigation } from "./UserNavigation";
 
@@ -18,9 +20,12 @@ interface CampanhaPublica {
 }
 
 export function PublicCampaigns() {
+  const { user, isAuthenticated } = useAuth();
   const [campanhas, setCampanhas] = useState<CampanhaPublica[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState("");
+  const [enviando, setEnviando] = useState<number | null>(null);
+  const [enviados, setEnviados] = useState<number[]>([]);
 
   useEffect(() => {
     fetch('https://level1-io-service.onrender.com/campanha')
@@ -32,6 +37,22 @@ export function PublicCampaigns() {
       .catch(() => setErro("Erro ao carregar campanhas."))
       .finally(() => setCarregando(false));
   }, []);
+
+  const handlePedirEntrar = async (idcampanha: number) => {
+    if (!user?.id_usuario) return;
+    setEnviando(idcampanha);
+    try {
+      await criarSolicitacao(user.id_usuario, idcampanha);
+      setEnviados([...enviados, idcampanha]);
+    } catch {
+      setErro("Erro ao enviar solicitação. Tente novamente.");
+    } finally {
+      setEnviando(null);
+    }
+  };
+
+  const isProprioMestre = (campanha: CampanhaPublica) =>
+    user?.id_usuario === campanha.dm_idusuario;
 
   return (
     <>
@@ -113,9 +134,31 @@ export function PublicCampaigns() {
                       </div>
                     )}
                   </div>
-                  <Button className="w-full sm:w-auto bg-primary hover:bg-accent" disabled>
-                    Pedir para Entrar
-                  </Button>
+
+                  {!isAuthenticated ? (
+                    <Link to="/login">
+                      <Button variant="outline" className="border-primary text-primary hover:bg-primary hover:text-primary-foreground">
+                        <LogIn className="w-4 h-4 mr-2" />
+                        Entre para participar
+                      </Button>
+                    </Link>
+                  ) : isProprioMestre(campanha) ? (
+                    <Button disabled variant="outline" className="border-border text-muted-foreground">
+                      Você é o mestre desta campanha
+                    </Button>
+                  ) : enviados.includes(campanha.idcampanha) ? (
+                    <Button disabled className="bg-primary/50">
+                      Solicitação enviada ✓
+                    </Button>
+                  ) : (
+                    <Button
+                      className="bg-primary hover:bg-accent"
+                      onClick={() => handlePedirEntrar(campanha.idcampanha)}
+                      disabled={enviando === campanha.idcampanha}
+                    >
+                      {enviando === campanha.idcampanha ? "Enviando..." : "Pedir para Entrar"}
+                    </Button>
+                  )}
                 </CardContent>
               </Card>
             ))}
