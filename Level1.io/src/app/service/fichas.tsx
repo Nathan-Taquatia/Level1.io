@@ -13,6 +13,7 @@ export async function criarFicha(dados: {
   raca?: string;
   idusuario: number;
   idcampanha?: number;
+  idsistema?: number;
 }) {
   const resposta = await fetch(`${BASE_URL}/ficha`, {
     method: 'POST',

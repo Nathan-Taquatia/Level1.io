@@ -32,12 +32,18 @@ interface CampanhaOpcao {
   gruponomes: string;
 }
 
+interface SistemaOpcao {
+  idsistema: number;
+  nomesistema: string;
+}
+
 export function CharacterSheets() {
   const { user } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [fichas, setFichas] = useState<FichaAPI[]>([]);
   const [campanhas, setCampanhas] = useState<CampanhaOpcao[]>([]);
+  const [sistemas, setSistemas] = useState<SistemaOpcao[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState("");
   const [showCreateForm, setShowCreateForm] = useState(false);
@@ -50,6 +56,7 @@ export function CharacterSheets() {
     nivel: 1,
     raca: "",
     idcampanha: "",
+    idsistema: "",
   });
 
   async function carregarFichas() {
@@ -81,10 +88,20 @@ export function CharacterSheets() {
     }
   }
 
+  async function carregarSistemas() {
+    try {
+      const resposta = await fetch('https://level1-io-service.onrender.com/sistema');
+      if (resposta.ok) setSistemas(await resposta.json());
+    } catch {
+      // sistemas são opcionais, não bloqueia
+    }
+  }
+
   useEffect(() => {
     setCarregando(true);
     carregarFichas();
     carregarCampanhas();
+    carregarSistemas();
   }, [user?.id_usuario]);
 
   const handleCreateSheet = async (e: React.FormEvent) => {
@@ -99,8 +116,9 @@ export function CharacterSheets() {
         raca: newSheet.raca || undefined,
         idusuario: user.id_usuario,
         idcampanha: newSheet.idcampanha ? Number(newSheet.idcampanha) : undefined,
+        idsistema: newSheet.idsistema ? Number(newSheet.idsistema) : undefined,
       });
-      setNewSheet({ nomepersonagem: "", classe: "", nivel: 1, raca: "", idcampanha: "" });
+      setNewSheet({ nomepersonagem: "", classe: "", nivel: 1, raca: "", idcampanha: "", idsistema: "" });
       setShowCreateForm(false);
       await carregarFichas();
     } catch {
@@ -202,6 +220,23 @@ export function CharacterSheets() {
                       onChange={(e) => setNewSheet({ ...newSheet, nivel: parseInt(e.target.value) || 1 })}
                       className="bg-input-background border-input"
                     />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-foreground">Sistema <span className="text-muted-foreground text-sm">(opcional)</span></Label>
+                    <Select value={newSheet.idsistema} onValueChange={(v) => setNewSheet({ ...newSheet, idsistema: v })}>
+                      <SelectTrigger className="bg-input-background border-input">
+                        <SelectValue placeholder="Selecione o sistema" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">Nenhum</SelectItem>
+                        {sistemas.map((s) => (
+                          <SelectItem key={s.idsistema} value={String(s.idsistema)}>
+                            {s.nomesistema}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
 
                   <div className="space-y-2 md:col-span-2">
