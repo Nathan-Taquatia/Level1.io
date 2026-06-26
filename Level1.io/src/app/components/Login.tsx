@@ -12,7 +12,7 @@ export function Login() {
   const { login } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [erro, setErro] = useState(""); 
+  const [erro, setErro] = useState("");
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
