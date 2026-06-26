@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useAuth } from "../contexts/AuthContext";
-import { getFichasUsuario, criarFicha, deletarFicha } from "../service/fichas";
+import { getFichasUsuario, criarFicha, atualizarFicha, deletarFicha, uploadPDFFicha, getPDFUrl } from "../service/fichas";
 import { getGruposUsuario } from "../service/grupos";
 import { getCampanhasGrupo } from "../service/campanhas";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "./ui/card";
@@ -8,7 +8,7 @@ import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "./ui/select";
-import { Plus, FileText, Upload, Trash2, FileCheck, Download } from "lucide-react";
+import { Plus, FileText, Upload, Trash2, FileCheck, Download, Edit } from "lucide-react";
 import { UserNavigation } from "./UserNavigation";
 
 interface FichaAPI {
@@ -19,6 +19,7 @@ interface FichaAPI {
   raca: string | null;
   idusuario: number;
   idcampanha: number | null;
+  idsistema: number | null;
   pdf_url: string | null;
   pdf_nome: string | null;
   criado_em: string;
@@ -37,6 +38,8 @@ interface SistemaOpcao {
   nomesistema: string;
 }
 
+const emptySheet = { nomepersonagem: "", classe: "", nivel: 1, raca: "", idcampanha: "", idsistema: "" };
+
 export function CharacterSheets() {
   const { user } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -47,17 +50,10 @@ export function CharacterSheets() {
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState("");
   const [showCreateForm, setShowCreateForm] = useState(false);
+  const [editandoId, setEditandoId] = useState<number | null>(null);
   const [criando, setCriando] = useState(false);
   const [uploadingId, setUploadingId] = useState<number | null>(null);
-
-  const [newSheet, setNewSheet] = useState({
-    nomepersonagem: "",
-    classe: "",
-    nivel: 1,
-    raca: "",
-    idcampanha: "",
-    idsistema: "",
-  });
+  const [sheet, setSheet] = useState(emptySheet);
 
   async function carregarFichas() {
     if (!user?.id_usuario) return;
@@ -83,18 +79,14 @@ export function CharacterSheets() {
         );
       }
       setCampanhas(todasCampanhas);
-    } catch {
-      // campanhas são opcionais, não bloqueia
-    }
+    } catch {}
   }
 
   async function carregarSistemas() {
     try {
       const resposta = await fetch('https://level1-io-service.onrender.com/sistema');
       if (resposta.ok) setSistemas(await resposta.json());
-    } catch {
-      // sistemas são opcionais, não bloqueia
-    }
+    } catch {}
   }
 
   useEffect(() => {
@@ -104,28 +96,56 @@ export function CharacterSheets() {
     carregarSistemas();
   }, [user?.id_usuario]);
 
-  const handleCreateSheet = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newSheet.nomepersonagem || !user?.id_usuario) return;
+    if (!sheet.nomepersonagem || !user?.id_usuario) return;
     setCriando(true);
+    setErro("");
     try {
-      await criarFicha({
-        nomepersonagem: newSheet.nomepersonagem,
-        classe: newSheet.classe || undefined,
-        nivel: newSheet.nivel,
-        raca: newSheet.raca || undefined,
-        idusuario: user.id_usuario,
-        idcampanha: newSheet.idcampanha ? Number(newSheet.idcampanha) : undefined,
-        idsistema: newSheet.idsistema ? Number(newSheet.idsistema) : undefined,
-      });
-      setNewSheet({ nomepersonagem: "", classe: "", nivel: 1, raca: "", idcampanha: "", idsistema: "" });
+      const dados = {
+        nomepersonagem: sheet.nomepersonagem,
+        classe: sheet.classe || undefined,
+        nivel: sheet.nivel,
+        raca: sheet.raca || undefined,
+        idcampanha: sheet.idcampanha && sheet.idcampanha !== 'none' ? Number(sheet.idcampanha) : undefined,
+        idsistema: sheet.idsistema && sheet.idsistema !== 'none' ? Number(sheet.idsistema) : undefined,
+      };
+
+      if (editandoId) {
+        await atualizarFicha(editandoId, dados);
+      } else {
+        await criarFicha({ ...dados, idusuario: user.id_usuario });
+      }
+
+      setSheet(emptySheet);
       setShowCreateForm(false);
+      setEditandoId(null);
       await carregarFichas();
     } catch {
-      setErro("Erro ao criar ficha.");
+      setErro(editandoId ? "Erro ao atualizar ficha." : "Erro ao criar ficha.");
     } finally {
       setCriando(false);
     }
+  };
+
+  const handleEditar = (ficha: FichaAPI) => {
+    setSheet({
+      nomepersonagem: ficha.nomepersonagem,
+      classe: ficha.classe ?? "",
+      nivel: ficha.nivel,
+      raca: ficha.raca ?? "",
+      idcampanha: ficha.idcampanha ? String(ficha.idcampanha) : "",
+      idsistema: ficha.idsistema ? String(ficha.idsistema) : "",
+    });
+    setEditandoId(ficha.idficha);
+    setShowCreateForm(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleCancelar = () => {
+    setSheet(emptySheet);
+    setEditandoId(null);
+    setShowCreateForm(false);
   };
 
   const handleDelete = async (idficha: number) => {
@@ -138,7 +158,7 @@ export function CharacterSheets() {
     }
   };
 
-  const handleFileUpload = (idficha: number, file: File) => {
+  const handleFileUpload = async (idficha: number, file: File) => {
     if (file.type !== "application/pdf") {
       alert("Por favor, envie apenas arquivos PDF.");
       return;
@@ -147,9 +167,15 @@ export function CharacterSheets() {
       alert("O arquivo é muito grande. Tamanho máximo: 10MB");
       return;
     }
-    // PDF upload será integrado com Supabase Storage futuramente
-    alert("Upload de PDF será disponibilizado em breve com integração ao Supabase Storage.");
-    setUploadingId(null);
+    setUploadingId(idficha);
+    try {
+      await uploadPDFFicha(idficha, file);
+      await carregarFichas();
+    } catch {
+      alert("Erro ao fazer upload do PDF. Tente novamente.");
+    } finally {
+      setUploadingId(null);
+    }
   };
 
   return (
@@ -161,7 +187,7 @@ export function CharacterSheets() {
             <h1 className="text-4xl text-foreground mb-2">Minhas Fichas</h1>
             <p className="text-muted-foreground">Gerencie suas fichas de personagens de RPG</p>
           </div>
-          <Button onClick={() => setShowCreateForm(!showCreateForm)} className="bg-primary hover:bg-accent">
+          <Button onClick={() => { handleCancelar(); setShowCreateForm(true); }} className="bg-primary hover:bg-accent">
             <Plus className="w-4 h-4 mr-2" />
             Nova Ficha
           </Button>
@@ -169,21 +195,23 @@ export function CharacterSheets() {
 
         {erro && <p className="text-destructive text-sm mb-4">{erro}</p>}
 
-        {/* Create Form */}
+        {/* Create/Edit Form */}
         {showCreateForm && (
           <Card className="bg-card border-border mb-8">
             <CardHeader>
-              <CardTitle className="text-foreground">Criar Nova Ficha</CardTitle>
+              <CardTitle className="text-foreground">
+                {editandoId ? "Editar Ficha" : "Criar Nova Ficha"}
+              </CardTitle>
               <CardDescription>Preencha as informações básicas do personagem</CardDescription>
             </CardHeader>
             <CardContent>
-              <form onSubmit={handleCreateSheet} className="space-y-4">
+              <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="grid md:grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label className="text-foreground">Nome do Personagem</Label>
                     <Input
-                      value={newSheet.nomepersonagem}
-                      onChange={(e) => setNewSheet({ ...newSheet, nomepersonagem: e.target.value })}
+                      value={sheet.nomepersonagem}
+                      onChange={(e) => setSheet({ ...sheet, nomepersonagem: e.target.value })}
                       className="bg-input-background border-input"
                       placeholder="Ex: Aragorn"
                       required
@@ -193,8 +221,8 @@ export function CharacterSheets() {
                   <div className="space-y-2">
                     <Label className="text-foreground">Classe <span className="text-muted-foreground text-sm">(opcional)</span></Label>
                     <Input
-                      value={newSheet.classe}
-                      onChange={(e) => setNewSheet({ ...newSheet, classe: e.target.value })}
+                      value={sheet.classe}
+                      onChange={(e) => setSheet({ ...sheet, classe: e.target.value })}
                       className="bg-input-background border-input"
                       placeholder="Ex: Guerreiro, Mago, Ladino"
                     />
@@ -203,8 +231,8 @@ export function CharacterSheets() {
                   <div className="space-y-2">
                     <Label className="text-foreground">Raça/Ancestralidade <span className="text-muted-foreground text-sm">(opcional)</span></Label>
                     <Input
-                      value={newSheet.raca}
-                      onChange={(e) => setNewSheet({ ...newSheet, raca: e.target.value })}
+                      value={sheet.raca}
+                      onChange={(e) => setSheet({ ...sheet, raca: e.target.value })}
                       className="bg-input-background border-input"
                       placeholder="Ex: Humano, Elfo, Anão"
                     />
@@ -216,15 +244,15 @@ export function CharacterSheets() {
                       type="number"
                       min="1"
                       max="20"
-                      value={newSheet.nivel}
-                      onChange={(e) => setNewSheet({ ...newSheet, nivel: parseInt(e.target.value) || 1 })}
+                      value={sheet.nivel}
+                      onChange={(e) => setSheet({ ...sheet, nivel: parseInt(e.target.value) || 1 })}
                       className="bg-input-background border-input"
                     />
                   </div>
 
                   <div className="space-y-2">
                     <Label className="text-foreground">Sistema <span className="text-muted-foreground text-sm">(opcional)</span></Label>
-                    <Select value={newSheet.idsistema} onValueChange={(v) => setNewSheet({ ...newSheet, idsistema: v })}>
+                    <Select value={sheet.idsistema} onValueChange={(v) => setSheet({ ...sheet, idsistema: v })}>
                       <SelectTrigger className="bg-input-background border-input">
                         <SelectValue placeholder="Selecione o sistema" />
                       </SelectTrigger>
@@ -239,9 +267,9 @@ export function CharacterSheets() {
                     </Select>
                   </div>
 
-                  <div className="space-y-2 md:col-span-2">
+                  <div className="space-y-2">
                     <Label className="text-foreground">Campanha <span className="text-muted-foreground text-sm">(opcional)</span></Label>
-                    <Select value={newSheet.idcampanha} onValueChange={(v) => setNewSheet({ ...newSheet, idcampanha: v })}>
+                    <Select value={sheet.idcampanha} onValueChange={(v) => setSheet({ ...sheet, idcampanha: v })}>
                       <SelectTrigger className="bg-input-background border-input">
                         <SelectValue placeholder="Selecione uma campanha" />
                       </SelectTrigger>
@@ -259,9 +287,9 @@ export function CharacterSheets() {
 
                 <div className="flex gap-4">
                   <Button type="submit" className="bg-primary hover:bg-accent" disabled={criando}>
-                    {criando ? "Criando..." : "Criar Ficha"}
+                    {criando ? "Salvando..." : editandoId ? "Salvar Alterações" : "Criar Ficha"}
                   </Button>
-                  <Button type="button" variant="outline" onClick={() => setShowCreateForm(false)} className="border-border">
+                  <Button type="button" variant="outline" onClick={handleCancelar} className="border-border">
                     Cancelar
                   </Button>
                 </div>
@@ -328,43 +356,66 @@ export function CharacterSheets() {
                         )}
                       </div>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDelete(ficha.idficha)}
-                      className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+                    <div className="flex gap-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleEditar(ficha)}
+                        className="text-primary hover:text-primary hover:bg-primary/10"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDelete(ficha.idficha)}
+                        className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3">
-                    {ficha.pdf_url ? (
+                    {ficha.pdf_nome ? (
                       <div className="bg-primary/5 border border-primary/20 rounded-lg p-3">
                         <div className="flex items-center gap-2 mb-2">
                           <FileCheck className="w-4 h-4 text-primary" />
                           <span className="text-sm font-medium text-foreground">PDF Anexado</span>
                         </div>
                         <p className="text-xs text-muted-foreground mb-2">{ficha.pdf_nome}</p>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="w-full text-xs border-primary text-primary hover:bg-primary hover:text-primary-foreground"
-                          onClick={() => window.open(ficha.pdf_url!, '_blank')}
-                        >
-                          <Download className="w-3 h-3 mr-1" />
-                          Visualizar
-                        </Button>
+                        <div className="flex gap-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="flex-1 text-xs border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+                            onClick={() => window.open(getPDFUrl(ficha.idficha), '_blank')}
+                          >
+                            <Download className="w-3 h-3 mr-1" />
+                            Visualizar
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="flex-1 text-xs"
+                            onClick={() => { setUploadingId(ficha.idficha); fileInputRef.current?.click(); }}
+                            disabled={uploadingId === ficha.idficha}
+                          >
+                            <Upload className="w-3 h-3 mr-1" />
+                            {uploadingId === ficha.idficha ? "Enviando..." : "Trocar"}
+                          </Button>
+                        </div>
                       </div>
                     ) : (
                       <Button
                         variant="outline"
                         className="w-full border-dashed border-primary/50 text-primary hover:bg-primary/5"
                         onClick={() => { setUploadingId(ficha.idficha); fileInputRef.current?.click(); }}
+                        disabled={uploadingId === ficha.idficha}
                       >
                         <Upload className="w-4 h-4 mr-2" />
-                        Anexar PDF da Ficha
+                        {uploadingId === ficha.idficha ? "Enviando..." : "Anexar PDF da Ficha"}
                       </Button>
                     )}
                     <div className="text-xs text-muted-foreground pt-3 border-t border-border">
