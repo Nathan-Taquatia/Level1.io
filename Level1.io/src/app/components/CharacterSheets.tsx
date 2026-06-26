@@ -55,6 +55,7 @@ export function CharacterSheets() {
   const [uploadingId, setUploadingId] = useState<number | null>(null);
   const [sheet, setSheet] = useState(emptySheet);
 
+  // Busca as fichas do usuario no banco
   async function carregarFichas() {
     if (!user?.id_usuario) return;
     try {
@@ -67,6 +68,7 @@ export function CharacterSheets() {
     }
   }
 
+  // Busca campanhas do usuario para popular o dropdown do formulario
   async function carregarCampanhas() {
     if (!user?.id_usuario) return;
     try {
@@ -82,6 +84,7 @@ export function CharacterSheets() {
     } catch {}
   }
 
+  // Busca os sistemas de regras cadastrados para popular o dropdown
   async function carregarSistemas() {
     try {
       const resposta = await fetch('https://level1-io-service.onrender.com/sistema');
@@ -89,6 +92,7 @@ export function CharacterSheets() {
     } catch {}
   }
 
+  // Carrega fichas, campanhas e sistemas ao montar o componente
   useEffect(() => {
     setCarregando(true);
     carregarFichas();
@@ -96,6 +100,7 @@ export function CharacterSheets() {
     carregarSistemas();
   }, [user?.id_usuario]);
 
+  // Cria ou atualiza uma ficha dependendo se esta em modo de edicao
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!sheet.nomepersonagem || !user?.id_usuario) return;
@@ -128,6 +133,7 @@ export function CharacterSheets() {
     }
   };
 
+  // Preenche o formulario com os dados da ficha selecionada para edicao
   const handleEditar = (ficha: FichaAPI) => {
     setSheet({
       nomepersonagem: ficha.nomepersonagem,
@@ -142,12 +148,14 @@ export function CharacterSheets() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  // Limpa o formulario e cancela o modo de edicao
   const handleCancelar = () => {
     setSheet(emptySheet);
     setEditandoId(null);
     setShowCreateForm(false);
   };
 
+  // Remove a ficha do banco e atualiza a lista localmente
   const handleDelete = async (idficha: number) => {
     if (!confirm("Tem certeza que deseja excluir esta ficha?")) return;
     try {
@@ -158,6 +166,7 @@ export function CharacterSheets() {
     }
   };
 
+  // Envia o PDF para o banco como LONGBLOB e atualiza a ficha
   const handleFileUpload = async (idficha: number, file: File) => {
     if (file.type !== "application/pdf") {
       alert("Por favor, envie apenas arquivos PDF.");

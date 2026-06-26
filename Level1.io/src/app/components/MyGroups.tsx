@@ -10,6 +10,7 @@ import { Users, Plus, Crown, UserPlus, Calendar } from "lucide-react";
 import { Link } from "react-router";
 import { UserNavigation } from "./UserNavigation";
 
+// Estrutura de um grupo retornado pela API
 interface GrupoAPI {
   idgrupos: number;
   gruponomes: string;
@@ -27,6 +28,7 @@ export function MyGroups() {
   const [newGroup, setNewGroup] = useState({ name: "", description: "" });
   const [criando, setCriando] = useState(false);
 
+  // Carrega os grupos do usuario ao montar o componente
   useEffect(() => {
     if (!user?.id_usuario) {
       setCarregando(false);
@@ -39,6 +41,7 @@ export function MyGroups() {
       .finally(() => setCarregando(false));
   }, [user?.id_usuario]);
 
+  // Cria um novo grupo e vincula o usuario como mestre
   const handleCreateGroup = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newGroup.name || !user?.id_usuario) return;

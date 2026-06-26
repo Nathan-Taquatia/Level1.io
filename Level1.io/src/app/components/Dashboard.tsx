@@ -10,6 +10,7 @@ import { Link } from "react-router";
 import { UserNavigation } from "./UserNavigation";
 import { useState, useEffect } from "react";
 
+// Estrutura de uma solicitacao de entrada em campanha pendente
 interface Solicitacao {
   idsolicitacao: number;
   nomeusuario: string;
@@ -30,6 +31,7 @@ export function Dashboard() {
   const [solicitacoes, setSolicitacoes] = useState<Solicitacao[]>([]);
   const [respondendo, setRespondendo] = useState<number | null>(null);
 
+  // Busca solicitacoes pendentes para campanhas onde o usuario e mestre
   useEffect(() => {
     if (!user?.id_usuario) return;
     getSolicitacoesPendentes(user.id_usuario)
@@ -37,6 +39,7 @@ export function Dashboard() {
       .catch(() => {});
   }, [user?.id_usuario]);
 
+  // Aceita ou nega uma solicitacao e remove da lista apos resposta
   const handleResponder = async (idsolicitacao: number, status: 'aceito' | 'negado') => {
     setRespondendo(idsolicitacao);
     try {

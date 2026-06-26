@@ -42,16 +42,18 @@ export function Agenda() {
     idcampanha: "",
   });
 
+  // Busca as sessoes agendadas pelo usuario no banco
   async function carregarSessoes() {
     if (!user?.id_usuario) return;
     try {
       const dados = await getSessoesUsuario(user.id_usuario);
       setSessoes(dados);
     } catch {
-      // silencioso — agenda é secundária
+      // silencioso — agenda e secundaria
     }
   }
 
+  // Busca campanhas do usuario para popular o dropdown do formulario
   async function carregarCampanhas() {
     if (!user?.id_usuario) return;
     try {
@@ -63,15 +65,17 @@ export function Agenda() {
       }
       setCampanhas(todas);
     } catch {
-      // campanhas são opcionais
+      // campanhas sao opcionais
     }
   }
 
+  // Carrega sessoes e campanhas ao montar o componente
   useEffect(() => {
     carregarSessoes();
     carregarCampanhas();
   }, [user?.id_usuario]);
 
+  // Salva uma nova sessao no banco e atualiza a lista
   const handleAddSession = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user?.id_usuario) return;

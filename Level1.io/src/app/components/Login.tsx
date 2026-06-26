@@ -14,6 +14,7 @@ export function Login() {
   const [password, setPassword] = useState("");
   const [erro, setErro] = useState("");
 
+  // Chama a API de login e salva o usuario no contexto se as credenciais forem validas
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setErro("");
@@ -91,5 +92,5 @@ export function Login() {
         </div>
       </div>
     </div>
-  ); 
+  );
 }

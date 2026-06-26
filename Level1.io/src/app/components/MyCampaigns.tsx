@@ -48,6 +48,7 @@ export function MyCampaigns() {
     grupos_idgrupos: "",
   });
 
+  // Carrega grupos do usuario e as campanhas de cada grupo, alem das campanhas em que e jogador
   async function carregar() {
     if (!user?.id_usuario) return;
     try {
@@ -70,11 +71,13 @@ export function MyCampaigns() {
     }
   }
 
+  // Carrega dados ao montar o componente ou quando o usuario muda
   useEffect(() => {
     setCarregando(true);
     carregar();
   }, [user?.id_usuario]);
 
+  // Cria uma nova campanha vinculada ao grupo selecionado
   const handleCreateCampaign = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newCampaign.campanhanome || !newCampaign.grupos_idgrupos) return;
