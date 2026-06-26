@@ -25,6 +25,36 @@ const campaigns: Campaign[] = [
     players: "2-5 jogadores",
     type: "Aventura Grátis",
   },
+  {
+    id: "the-lightless-beacon",
+    name: "The Lightless Beacon",
+    game: "Call of Cthulhu",
+    description: "Após um acidente marítimo, os investigadores ficam presos em uma pequena ilha costeira onde um farol misteriosamente deixou de funcionar. Enquanto procuram abrigo e tentam descobrir o que aconteceu aos responsáveis pelo local, percebem que algo estranho está espreitando na escuridão. Isolados do continente e cercados pelo mar, eles precisarão desvendar o mistério da ilha antes que seja tarde demais.",
+    difficulty: "Iniciante",
+    duration: "1-2 sessões",
+    players: "2-5 jogadores",
+    type: "Aventura Grátis",
+  },
+  {
+    id: "chase",
+    name: "Chase",
+    game: "Overarms",
+    description: "Japão, início dos anos 90. Na pequena cidade costeira de Makubetsu, os dias passam devagar. Para os jovens que ficaram, o tédio é constante — e encontrar problemas se tornou a melhor forma de se sentir vivo. Mas algo estranho está acontecendo: criaturas monstruosas vagando pelas ruas durante a noite, perseguindo pessoas e desaparecendo sem deixar rastros. Vocês são estudantes problemáticos que, quando os relatos sobre os monstros começam a se acumular, a curiosidade fala mais alto. Investigando os segredos de Makubetsu — de suas florestas silenciosas aos túneis abandonados, dos corredores da escola às ruas sinuosas da cidade — vocês descobrirão que há muito mais por trás dessas aparições. E, ao encarar a verdade, algo adormecido dentro de vocês também despertará.",
+    difficulty: "Intermediário",
+    duration: "3-5 sessões",
+    players: "3-5 jogadores",
+    type: "Aventura Grátis",
+  },
+  {
+    id: "peril-in-pinebrook",
+    name: "Peril in Pinebrook",
+    game: "D&D 5e",
+    description: "A pacata vila de Pinebrook vive dias de preocupação. Moradores desapareceram, estranhos acontecimentos vêm sendo relatados nos arredores e uma ameaça desconhecida parece se esconder nas florestas próximas. Atendendo ao pedido de ajuda da comunidade, os aventureiros partem para investigar o que está acontecendo. O que começa como uma missão simples logo se transforma em uma jornada repleta de perigos, exploração e combates, onde coragem e trabalho em equipe serão essenciais para proteger a vila.",
+    difficulty: "Iniciante",
+    duration: "2-3 sessões",
+    players: "3-5 jogadores",
+    type: "Aventura Grátis",
+  },
 ];
 
 const getDifficultyColor = (difficulty: string) => {
